@@ -1,6 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from __future__ import print_function
+
+import os
+
+import tensorflow as tf
+# from tensorflow import keras
+
+print(tf.version.VERSION)
 
 import keras
 from keras.models import Sequential
@@ -27,6 +34,15 @@ import numpy as np
 #config.gpu_options.per_process_gpu_memory_fraction = 0.42
 #set_session(tf.Session(config=config))
 
+checkpoint_path = "/Users/peng.yu/myworks/ai-noise-filter/training_checkpoint/rnnoise-{epoch:04d}.ckpt"
+checkpoint_dir = os.path.dirname(checkpoint_path)
+
+# Create a callback that saves the model's weights
+cp_callback = keras.callbacks.ModelCheckpoint(
+    filepath=checkpoint_path, 
+    verbose=1, 
+    save_weights_only=True,
+    period=1)
 
 def my_crossentropy(y_true, y_pred):
     return K.mean(2*K.abs(y_true-0.5) * K.binary_crossentropy(y_pred, y_true), axis=-1)
@@ -78,11 +94,14 @@ model.compile(loss=[mycost, my_crossentropy],
               metrics=[msse],
               optimizer='adam', loss_weights=[10, 0.5])
 
+model.save_weights(checkpoint_path.format(epoch=0))
+# Loads the weights
+#model.load_weights(checkpoint_path)
 
 batch_size = 32
 
 print('Loading data...')
-with h5py.File('training.h5', 'r') as hf:
+with h5py.File('/Users/peng.yu/Downloads/yp36220000-LibriSpeech-UrbanSound8K.h5', 'r') as hf:
     all_data = hf['data'][:]
 print('done.')
 
@@ -112,5 +131,6 @@ print('Train...')
 model.fit(x_train, [y_train, vad_train],
           batch_size=batch_size,
           epochs=120,
-          validation_split=0.1)
-model.save("weights.hdf5")
+          validation_split=0.1,
+          callbacks=[cp_callback])
+model.save("/Users/peng.yu/myworks/ai-noise-filter/training_checkpoint/rnnoise-weights.hdf5")
