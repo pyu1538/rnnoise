@@ -29,12 +29,15 @@ from keras import backend as K
 import numpy as np
 
 #import tensorflow as tf
-#from keras.backend.tensorflow_backend import set_session
-#config = tf.ConfigProto()
-#config.gpu_options.per_process_gpu_memory_fraction = 0.42
-#set_session(tf.Session(config=config))
+from tensorflow.python.keras import backend
 
-checkpoint_path = "/Users/peng.yu/myworks/ai-noise-filter/training_checkpoint/rnnoise-{epoch:04d}.ckpt"
+config = tf.compat.v1.ConfigProto(device_count={"CPU": 40},
+                        inter_op_parallelism_threads=2,
+                        intra_op_parallelism_threads=2)
+#config.gpu_options.per_process_gpu_memory_fraction = 0.42
+backend.set_session(tf.compat.v1.Session(config=config))
+
+checkpoint_path = "/home/fll/ai-noise-filter/training_checkpoint_yp500000000_07132020/rnnoise-{epoch:04d}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 # Create a callback that saves the model's weights
@@ -97,11 +100,11 @@ model.compile(loss=[mycost, my_crossentropy],
 #model.save_weights(checkpoint_path.format(epoch=0))
 # Loads the weights
 print('Loading weights...')
-model.load_weights('/Users/peng.yu/myworks/ai-noise-filter/training_checkpoint-yp33590000-FSDKaggle2018-MS-SNSD-clean-tsp-ms-car-keyboard-stroke-door-chair-step-06092020/rnnoise-0120.ckpt')
+#model.load_weights('/home/fll/ai-noise-filter/wrong-model-training/training_checkpoint-yp36220000-LibriSpeech-UrbanSound8K-06022020/rnnoise-0120.ckpt')
 
-batch_size = 128
+batch_size = 32
 print('Loading data...')
-with h5py.File('/Users/peng.yu/Downloads/yp33590000-FSDKaggle2018-MS-SNSD-clean-tsp-ms-car-keyboard-stroke-door-chair-step.h5', 'r') as hf:
+with h5py.File('/home/fll/yp500000000rnnoise.h5', 'r') as hf:
     all_data = hf['data'][:]
 print('done.')
 
@@ -133,4 +136,4 @@ model.fit(x_train, [y_train, vad_train],
           epochs=120,
           validation_split=0.1,
           callbacks=[cp_callback])
-model.save("/Users/peng.yu/myworks/ai-noise-filter/training_checkpoint/rnnoise-weights.hdf5")
+model.save("/home/fll/ai-noise-filter/training_checkpoint_yp500000000_07132020/rnnoise-weights.hdf5")
