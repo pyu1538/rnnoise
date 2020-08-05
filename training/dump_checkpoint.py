@@ -3,6 +3,14 @@
 from __future__ import print_function
 
 import os
+import sys
+import argparse
+import datetime
+
+parser = argparse.ArgumentParser()
+parser.add_argument('checkpoint_file', nargs=1, help='Specify the checkpoint file')
+args = parser.parse_args()
+print('Dump checkpoint file: ' + str(args.checkpoint_file))
 
 import tensorflow as tf
 # from tensorflow import keras
@@ -34,8 +42,12 @@ import numpy as np
 #config.gpu_options.per_process_gpu_memory_fraction = 0.42
 #set_session(tf.Session(config=config))
 
-checkpoint_path = "/Users/peng.yu/myworks/ai-noise-filter/training_checkpoint/rnnoise-{epoch:04d}.ckpt"
-checkpoint_dir = os.path.dirname(checkpoint_path)
+input_path = os.path.dirname(args.checkpoint_file[0])
+checkpoint_name = os.path.basename(args.checkpoint_file[0])
+output_path = os.path.dirname(args.checkpoint_file[0])
+
+checkpoint_path = os.path.join(output_path, 'rnnoise-{epoch:04d}.ckpt')
+checkpoint_dir = output_path
 
 # Create a callback that saves the model's weights
 cp_callback = keras.callbacks.ModelCheckpoint(
@@ -90,10 +102,10 @@ denoise_output = Dense(22, activation='sigmoid', name='denoise_output', kernel_c
 
 model = Model(inputs=main_input, outputs=[denoise_output, vad_output])
 
-model.load_weights('/Users/peng.yu/myworks/ai-noise-filter/training_checkpoint-yp33590000-FSDKaggle2018-MS-SNSD-clean-tsp-ms-car-keyboard-stroke-door-chair-step-06102020/rnnoise-0096.ckpt')
+model.load_weights(os.path.join(input_path, checkpoint_name))
 
 model.compile(loss=[mycost, my_crossentropy],
               metrics=[msse],
               optimizer='adam', loss_weights=[10, 0.5])
 
-model.save("/Users/peng.yu/myworks/ai-noise-filter/training_checkpoint-yp33590000-FSDKaggle2018-MS-SNSD-clean-tsp-ms-car-keyboard-stroke-door-chair-step-06102020/rnnoise-weights-96.hdf5")
+model.save(os.path.join(output_path, checkpoint_name+'.hdf5'))
