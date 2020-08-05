@@ -3,6 +3,28 @@
 from __future__ import print_function
 
 import os
+import sys
+import argparse
+import datetime
+
+def file_path(path):
+    if os.path.isfile(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"readable_file:{path} is not a valid file")
+
+def dir_path(path):
+    if os.path.isdir(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
+
+parser = argparse.ArgumentParser()
+parser.add_argument('bin_file', nargs=1, type=file_path, help='Specify the checkpoint file')
+parser.add_argument('-output_path', nargs=1, type=dir_path, help='Specify the checkpoint file')
+parser.add_argument('-checkpoint_file', nargs='*', help='Specify the checkpoint file')
+args = parser.parse_args()
+print('Output path: ' + str(args.output_path))
 
 import tensorflow as tf
 # from tensorflow import keras
@@ -29,6 +51,7 @@ from keras import backend as K
 import numpy as np
 
 #import tensorflow as tf
+'''
 from tensorflow.python.keras import backend
 
 config = tf.compat.v1.ConfigProto(device_count={"CPU": 40},
@@ -37,8 +60,35 @@ config = tf.compat.v1.ConfigProto(device_count={"CPU": 40},
 #config.gpu_options.per_process_gpu_memory_fraction = 0.42
 backend.set_session(tf.compat.v1.Session(config=config))
 
-checkpoint_path = "/home/fll/ai-noise-filter/training_checkpoint_yp500000000_07132020/rnnoise-{epoch:04d}.ckpt"
-checkpoint_dir = os.path.dirname(checkpoint_path)
+physical_devices = tf.config.list_physical_devices('CPU')
+logical_devices = tf.config.list_logical_devices('CPU')
+print(physical_devices)
+print(logical_devices)
+new_ld = []
+for i in range(40):
+  new_ld.append(tf.config.LogicalDeviceConfiguration())
+try:
+  tf.config.set_logical_device_configuration(
+    physical_devices[0],
+    new_ld)
+  logical_devices = tf.config.list_logical_devices('CPU')
+  print(logical_devices)
+except:
+  # Cannot modify logical devices once initialized.
+  print('Cannot modify logical devices once initialized')
+sys.exit('test yupeng')
+'''
+
+bin_file = args.bin_file[0]
+input_path = None
+checkpoint_name = None
+if len(args.checkpoint_file) > 0:
+    input_path = os.path.dirname(args.checkpoint_file[0])
+    checkpoint_name = os.path.basename(args.checkpoint_file[0])
+output_path = args.output_path[0]
+
+checkpoint_path = os.path.join(output_path, 'rnnoise-{epoch:04d}.ckpt')
+
 
 # Create a callback that saves the model's weights
 cp_callback = keras.callbacks.ModelCheckpoint(
@@ -99,12 +149,13 @@ model.compile(loss=[mycost, my_crossentropy],
 
 #model.save_weights(checkpoint_path.format(epoch=0))
 # Loads the weights
-print('Loading weights...')
-#model.load_weights('/home/fll/ai-noise-filter/wrong-model-training/training_checkpoint-yp36220000-LibriSpeech-UrbanSound8K-06022020/rnnoise-0120.ckpt')
+if input_path and checkpoint_name:
+    print('Loading weights...')
+    model.load_weights(os.path.join(input_path, checkpoint_name))
 
 batch_size = 32
 print('Loading data...')
-with h5py.File('/home/fll/yp500000000rnnoise.h5', 'r') as hf:
+with h5py.File(bin_file, 'r') as hf:
     all_data = hf['data'][:]
 print('done.')
 
@@ -133,7 +184,7 @@ print(len(x_train), 'train sequences. x shape =', x_train.shape, 'y shape = ', y
 print('Train...')
 model.fit(x_train, [y_train, vad_train],
           batch_size=batch_size,
-          epochs=120,
+          epochs=60,
           validation_split=0.1,
           callbacks=[cp_callback])
-model.save("/home/fll/ai-noise-filter/training_checkpoint_yp500000000_07132020/rnnoise-weights.hdf5")
+model.save(os.path.join(output_path, 'rnnoise-weights.hdf5'))
