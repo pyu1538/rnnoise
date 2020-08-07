@@ -186,7 +186,7 @@ print(len(x_train), 'train sequences. x shape =', x_train.shape, 'y shape = ', y
 print('Train...')
 model.fit(x_train, [y_train, vad_train],
           batch_size=batch_size,
-          epochs=60,
+          epochs=epochs,
           validation_split=0.1,
           callbacks=[cp_callback])
 model.save(os.path.join(output_path, 'rnnoise-weights.hdf5'))
