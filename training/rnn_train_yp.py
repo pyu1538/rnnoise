@@ -22,6 +22,7 @@ def dir_path(path):
 parser = argparse.ArgumentParser()
 parser.add_argument('bin_file', nargs=1, type=file_path, help='Specify the checkpoint file')
 parser.add_argument('-output_path', nargs=1, type=dir_path, help='Specify the checkpoint file')
+parser.add_argument('-epochs', nargs=1, type=int, help='Specify epochs count')
 parser.add_argument('-checkpoint_file', nargs='*', help='Specify the checkpoint file')
 args = parser.parse_args()
 print('Output path: ' + str(args.output_path))
@@ -82,13 +83,13 @@ sys.exit('test yupeng')
 bin_file = args.bin_file[0]
 input_path = None
 checkpoint_name = None
-if len(args.checkpoint_file) > 0:
+if args.checkpoint_file and len(args.checkpoint_file) > 0:
     input_path = os.path.dirname(args.checkpoint_file[0])
     checkpoint_name = os.path.basename(args.checkpoint_file[0])
 output_path = args.output_path[0]
 
 checkpoint_path = os.path.join(output_path, 'rnnoise-{epoch:04d}.ckpt')
-
+epochs = args.epochs[0]
 
 # Create a callback that saves the model's weights
 cp_callback = keras.callbacks.ModelCheckpoint(
@@ -150,8 +151,9 @@ model.compile(loss=[mycost, my_crossentropy],
 #model.save_weights(checkpoint_path.format(epoch=0))
 # Loads the weights
 if input_path and checkpoint_name:
-    print('Loading weights...')
-    model.load_weights(os.path.join(input_path, checkpoint_name))
+    ck_path = os.path.join(input_path, checkpoint_name)
+    print('Loading weights...' + ck_path)
+    model.load_weights(ck_path)
 
 batch_size = 32
 print('Loading data...')
